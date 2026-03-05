@@ -1,603 +1,573 @@
----
-// pages/index.astro
-// TextArt AI — Dark Purple Material UI
----
 
-<!DOCTYPE html>
+
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TextArt AI</title>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yuai15 - TextGenerator</title>
 
-  <style>
-    :root {
-      --bg:               #0D0A14;
-      --bg-2:             #110E1A;
-      --surface:          #181424;
-      --surface-2:        #1F1A30;
-      --surface-3:        #261F3A;
-      --primary:          #A67CFF;
-      --primary-dim:      #7C4FE0;
-      --primary-glow:     rgba(166,124,255,.18);
-      --primary-container:#1E1632;
-      --accent:           #C4A8FF;
-      --accent-2:         #E0D4FF;
-      --border:           rgba(166,124,255,.12);
-      --border-hover:     rgba(166,124,255,.32);
-      --text:             #EDE8FF;
-      --text-secondary:   #9B90C2;
-      --text-muted:       #5E5680;
-    }
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <style>
+        /* ─────────────────────────────────────────
+           MD3 Dark · Violet Tonal Palette
+        ───────────────────────────────────────── */
+        :root {
+            --md-bg:                    #111318;
+            --md-surface-low:           #191c24;
+            --md-surface:               #1d2029;
+            --md-surface-high:          #272a35;
+            --md-surface-highest:       #32353f;
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      height: 100dvh;
-      overflow: hidden;
-    }
+            --md-primary:               #cbb8ff;
+            --md-on-primary:            #2d0076;
+            --md-primary-container:     #4a1fa8;
+            --md-on-primary-container:  #ecdeff;
 
-    /* ── Ambient glow ── */
-    body::before {
-      content: '';
-      position: fixed;
-      top: -25%; left: -15%;
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(124,79,224,.09) 0%, transparent 70%);
-      pointer-events: none; z-index: 0;
-    }
-    body::after {
-      content: '';
-      position: fixed;
-      bottom: -20%; right: -10%;
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(166,124,255,.06) 0%, transparent 70%);
-      pointer-events: none; z-index: 0;
-    }
+            --md-secondary-container:   #3b3550;
+            --md-on-secondary-container:#e4ddf5;
 
-    /* ── Header ── */
-    header {
-      position: relative; z-index: 10;
-      padding: 13px 22px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 13px;
-    }
+            --md-outline:               #7a7585;
+            --md-outline-variant:       #2a2733;
 
-    .header-icon {
-      width: 36px; height: 36px; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--primary-dim), var(--primary));
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 17px;
-      box-shadow: 0 4px 14px rgba(124,79,224,.4);
-    }
+            --md-on-surface:            #e4e1ec;
+            --md-on-surface-variant:    #c9c4d0;
 
-    .header-text h1 {
-      font-family: 'Syne', sans-serif;
-      font-size: 16px; font-weight: 700;
-      color: var(--accent); letter-spacing: .02em;
-    }
-    .header-text p {
-      font-size: 11px; color: var(--text-muted);
-      letter-spacing: .04em; text-transform: uppercase; margin-top: 1px;
-    }
+            --md-error:                 #ffb4ab;
 
-    .header-badge {
-      margin-left: auto;
-      background: var(--primary-container);
-      border: 1px solid var(--border);
-      color: var(--primary);
-      font-size: 10px; font-weight: 600;
-      padding: 3px 9px; border-radius: 20px;
-      letter-spacing: .05em; text-transform: uppercase;
-    }
+            --md-shape-full:   9999px;
+            --md-shape-large:  16px;
+            --md-shape-medium: 12px;
+            --md-shape-small:  8px;
+        }
 
-    /* ── Chat ── */
-    .chat {
-      flex: 1; overflow-y: auto;
-      padding: 28px 22px;
-      position: relative; z-index: 1;
-      scroll-behavior: smooth;
-    }
-    .chat::-webkit-scrollbar { width: 4px; }
-    .chat::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Empty state ── */
-    .empty-state {
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      height: 100%; gap: 16px; text-align: center;
-      opacity: .55; padding-bottom: 48px;
-    }
-    .empty-icon {
-      width: 64px; height: 64px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
-    }
-    .empty-state h3 {
-      font-family: 'Syne', sans-serif;
-      font-size: 15px; color: var(--text-secondary);
-    }
-    .empty-state p {
-      font-size: 12px; color: var(--text-muted);
-      max-width: 210px; line-height: 1.75;
-    }
+        body {
+            font-family: 'Geist Sans', sans-serif;
+            background: var(--md-bg);
+            color: var(--md-on-surface);
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            overflow: hidden;
+        }
 
-    /* ── User bubble ── */
-    .user-bubble {
-      max-width: 72%; margin-left: auto;
-      margin-bottom: 20px;
-      padding: 12px 16px;
-      background: linear-gradient(135deg, var(--primary-container), #241B3E);
-      border: 1px solid var(--border);
-      border-radius: 18px 18px 4px 18px;
-      animation: slideUp .3s cubic-bezier(.16,1,.3,1);
-      font-size: 14px; line-height: 1.6; color: var(--accent-2);
-    }
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--md-outline-variant); border-radius: var(--md-shape-full); }
 
-    /* ── AI block ── */
-    .ai-block {
-      width: 100%; margin: 6px 0 24px;
-      animation: slideUp .35s cubic-bezier(.16,1,.3,1);
-    }
+        /* ─────────────────────────────────────────
+           TOP APP BAR
+        ───────────────────────────────────────── */
+        nav {
+            height: 56px;
+            padding: 0 1rem;
+            background: var(--md-surface-low);
+            border-bottom: 1px solid var(--md-outline-variant);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
 
-    .ai-label {
-      display: flex; align-items: center;
-      gap: 7px; margin-bottom: 9px;
-    }
-    .ai-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 7px var(--primary);
-      animation: pulse 2s infinite;
-    }
-    .ai-label-text {
-      font-size: 11px; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: .08em; font-weight: 500;
-    }
+        .nav-icon {
+            width: 36px; height: 36px;
+            border-radius: var(--md-shape-medium);
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+        }
 
-    .ai-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px; overflow: hidden;
-      transition: border-color .2s;
-    }
-    .ai-card:hover { border-color: var(--border-hover); }
+        .nav-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--md-on-surface);
+            letter-spacing: -0.01em;
+        }
 
-    .preview-container {
-      display: flex; justify-content: center; align-items: center;
-      min-height: 180px; padding: 24px;
-      background: linear-gradient(135deg, var(--bg-2), var(--surface));
-    }
+        .nav-chip {
+            margin-left: auto;
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: var(--md-shape-full);
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+            letter-spacing: 0.03em;
+            display: flex; align-items: center; gap: 6px;
+        }
 
-    .actions {
-      padding: 11px 14px; display: flex;
-      gap: 8px; flex-wrap: wrap;
-      border-top: 1px solid var(--border);
-      background: var(--surface-2);
-    }
+        .nav-chip i { font-size: 0.45rem; color: var(--md-primary); }
 
-    /* ── Buttons ── */
-    button {
-      border: none; cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 500;
-      transition: all .2s ease;
-    }
+        /* ─────────────────────────────────────────
+           CHAT AREA
+        ───────────────────────────────────────── */
+        #chat-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
 
-    .primary-btn {
-      background: linear-gradient(135deg, var(--primary-dim), var(--primary));
-      color: #fff; padding: 9px 15px;
-      border-radius: 10px; font-size: 13px;
-      box-shadow: 0 4px 14px rgba(124,79,224,.3);
-      display: flex; align-items: center; gap: 6px;
-    }
-    .primary-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,79,224,.45); }
-    .primary-btn:active { transform: translateY(0); }
+        /* ─────────────────────────────────────────
+           USER MESSAGE — right pill bubble
+        ───────────────────────────────────────── */
+        .bubble-wrapper.user-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding: 8px 20px 4px;
+            animation: msgIn 0.2s ease both;
+        }
 
-    .secondary-btn {
-      background: var(--surface-3); color: var(--text-secondary);
-      padding: 9px 13px; border-radius: 10px; font-size: 13px;
-      border: 1px solid var(--border);
-    }
-    .secondary-btn:hover { background: var(--primary-container); color: var(--accent); border-color: var(--border-hover); }
+        .user-bubble {
+            max-width: min(70%, 520px);
+            padding: 10px 18px;
+            border-radius: var(--md-shape-full);
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
 
-    /* ── Resolution panel ── */
-    .res-panel { display: none; gap: 6px; padding: 0 14px 11px; background: var(--surface-2); }
+        /* ─────────────────────────────────────────
+           AI MESSAGE — full-width stripe
+        ───────────────────────────────────────── */
+        .bubble-wrapper.ai-wrapper {
+            display: flex;
+            flex-direction: column;
+            background: var(--md-surface-low);
+            border-top: 1px solid var(--md-outline-variant);
+            border-bottom: 1px solid var(--md-outline-variant);
+            animation: msgIn 0.2s ease both;
+        }
 
-    .res-option {
-      background: var(--surface-3); color: var(--text-secondary);
-      padding: 5px 12px; border-radius: 8px; cursor: pointer;
-      font-size: 12px; font-family: 'Syne', sans-serif; font-weight: 600;
-      border: 1px solid var(--border); transition: all .18s;
-    }
-    .res-option:hover { border-color: var(--border-hover); color: var(--accent); }
-    .res-option.active { background: var(--primary-container); color: var(--primary); border-color: var(--primary); }
+        .ai-inner {
+            max-width: 760px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 14px 20px 10px;
+        }
 
-    /* ── Input bar ── */
-    .input-bar {
-      position: relative; z-index: 10;
-      background: var(--surface);
-      padding: 13px 16px;
-      border-top: 1px solid var(--border);
-    }
+        .ai-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--md-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .input-wrapper {
-      display: flex; gap: 10px; align-items: flex-end;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 10px 10px 10px 16px;
-      transition: border-color .2s, box-shadow .2s;
-    }
-    .input-wrapper:focus-within {
-      border-color: var(--border-hover);
-      box-shadow: 0 0 0 3px rgba(166,124,255,.08);
-    }
+        .ai-bubble {
+            font-size: 0.9rem;
+            line-height: 1.65;
+            color: var(--md-on-surface);
+        }
 
-    textarea {
-      flex: 1; resize: none; border: none; outline: none;
-      background: transparent; color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px; line-height: 1.6; max-height: 120px;
-    }
-    textarea::placeholder { color: var(--text-muted); }
+        .ai-bubble canvas {
+            max-width: 100%;
+            border-radius: var(--md-shape-medium);
+            display: block;
+        }
 
-    .send-btn {
-      width: 38px; height: 38px; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--primary-dim), var(--primary));
-      color: #fff; border-radius: 10px; font-size: 15px;
-      box-shadow: 0 4px 12px rgba(124,79,224,.35);
-      display: flex; align-items: center; justify-content: center;
-    }
-    .send-btn:hover { transform: scale(1.06); box-shadow: 0 6px 18px rgba(124,79,224,.5); }
-    .send-btn:active { transform: scale(.95); }
+        /* ─────────────────────────────────────────
+           META ROW
+        ───────────────────────────────────────── */
+        .bubble-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
 
-    /* ── Tools row ── */
-    .tools {
-      margin-top: 9px; display: flex;
-      align-items: center; gap: 6px; padding: 0 4px;
-    }
+        .user-wrapper .bubble-meta { justify-content: flex-end; padding-right: 2px; }
+        .ai-wrapper   .bubble-meta { justify-content: flex-start; }
 
-    .tool-btn {
-      background: transparent; color: var(--text-muted);
-      padding: 5px 11px; border-radius: 8px; font-size: 12px;
-      border: 1px solid transparent;
-      display: flex; align-items: center; gap: 5px;
-      transition: all .18s;
-    }
-    .tool-btn:hover { background: var(--surface-2); color: var(--accent); border-color: var(--border); }
+        .meta-time {
+            font-size: 0.67rem;
+            color: var(--md-outline);
+        }
 
-    .tool-hint { margin-left: auto; font-size: 11px; color: var(--text-muted); opacity: .5; }
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            font-family: inherit;
+            padding: 4px 12px;
+            border-radius: var(--md-shape-full);
+            border: none;
+            cursor: pointer;
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+            transition: filter 0.15s;
+        }
 
-    .color-dot {
-      width: 13px; height: 13px; border-radius: 4px;
-      background: #A67CFF;
-      border: 1px solid rgba(255,255,255,.2);
-      display: inline-block; transition: background .2s;
-    }
+        .download-btn:hover  { filter: brightness(1.12); }
+        .download-btn:active { filter: brightness(0.92); }
 
-    /* ── Loading ── */
-    .loading-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 24px; min-height: 140px;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .loading-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--primary);
-      animation: dotBounce 1.2s ease-in-out infinite;
-    }
-    .loading-dot:nth-child(2) { animation-delay: .2s; }
-    .loading-dot:nth-child(3) { animation-delay: .4s; }
+        /* ─────────────────────────────────────────
+           LOADING DOTS
+        ───────────────────────────────────────── */
+        .loading-dots {
+            display: flex;
+            gap: 6px;
+            padding: 4px 0;
+            align-items: center;
+        }
 
-    /* ── Error ── */
-    .error-card {
-      background: rgba(255,80,80,.06);
-      border: 1px solid rgba(255,80,80,.2);
-      border-radius: 16px; padding: 18px 20px;
-      color: #FF9090; font-size: 13px;
-    }
+        .loading-dots span {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--md-primary);
+            opacity: 0.25;
+            animation: dotPulse 1.3s infinite ease-in-out;
+        }
 
-    /* ── Keyframes ── */
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(14px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes pulse {
-      0%,100% { opacity:1; transform:scale(1); }
-      50%      { opacity:.4; transform:scale(.7); }
-    }
-    @keyframes dotBounce {
-      0%,80%,100% { transform:scale(.6); opacity:.3; }
-      40%          { transform:scale(1); opacity:1; }
-    }
+        .loading-dots span:nth-child(2) { animation-delay: 0.18s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.36s; }
 
-    * { scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
-  </style>
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.2; transform: scale(0.85); }
+            50%       { opacity: 1;   transform: scale(1.1); }
+        }
+
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─────────────────────────────────────────
+           EMPTY STATE
+        ───────────────────────────────────────── */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            pointer-events: none;
+            user-select: none;
+            padding: 2rem;
+        }
+
+        .empty-icon {
+            width: 56px; height: 56px;
+            border-radius: var(--md-shape-large);
+            background: var(--md-surface-high);
+            border: 1px solid var(--md-outline-variant);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+            color: var(--md-primary);
+        }
+
+        .empty-state p {
+            font-size: 0.85rem;
+            text-align: center;
+            color: var(--md-on-surface-variant);
+            max-width: 240px;
+            line-height: 1.55;
+        }
+
+        /* ─────────────────────────────────────────
+           BOTTOM INPUT BAR
+        ───────────────────────────────────────── */
+        .chat-navbar {
+            flex-shrink: 0;
+            padding: 10px 16px 12px;
+            background: var(--md-surface-low);
+            border-top: 1px solid var(--md-outline-variant);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            width: 40px; height: 40px;
+            border-radius: var(--md-shape-medium);
+            overflow: hidden;
+            border: 2px solid var(--md-outline-variant);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: border-color 0.2s;
+        }
+
+        .color-picker-wrapper:hover { border-color: var(--md-primary); }
+
+        input[type="color"] {
+            position: absolute;
+            inset: -4px;
+            width: calc(100% + 8px);
+            height: calc(100% + 8px);
+            border: none;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .input-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--md-surface-highest);
+            border-radius: var(--md-shape-full);
+            padding: 0 16px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--md-primary);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--md-primary) 18%, transparent);
+        }
+
+        .input-icon {
+            color: var(--md-outline);
+            font-size: 0.76rem;
+            flex-shrink: 0;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--md-on-surface);
+            font-size: 0.9rem;
+            font-family: inherit;
+            padding: 11px 0;
+            caret-color: var(--md-primary);
+        }
+
+        input[type="text"]::placeholder { color: var(--md-outline); }
+
+        .send-btn {
+            width: 44px; height: 44px;
+            border-radius: var(--md-shape-medium);
+            border: none;
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: filter 0.15s, transform 0.1s;
+        }
+
+        .send-btn:hover  { filter: brightness(1.1); }
+        .send-btn:active { transform: scale(0.95); filter: brightness(0.92); }
+
+        /* ─────────────────────────────────────────
+           RENDER SANDBOX
+        ───────────────────────────────────────── */
+        .render-temp {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+        }
+    </style>
 </head>
-
 <body>
 
-  <!-- Header -->
-  <header>
-    <div class="header-icon">✦</div>
-    <div class="header-text">
-      <h1>TextArt AI</h1>
-      <p>HTML Text Generator</p>
-    </div>
-    <span class="header-badge">Beta</span>
-  </header>
+    <!-- Top App Bar -->
+    <nav>
+        <div class="nav-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <span class="nav-title">Yuai15</span>
+        <div class="nav-chip">
+            <i class="fas fa-circle"></i>
+            TextGenerator
+        </div>
+    </nav>
 
-  <!-- Chat feed -->
-  <div class="chat" id="chat">
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">✦</div>
-      <h3>Mulai berkreasi</h3>
-      <p>Deskripsikan text art yang kamu inginkan dan biarkan AI menghasilkannya</p>
+    <!-- Chat List -->
+    <div id="chat-list">
+        <div class="empty-state" id="empty-state">
+            <div class="empty-icon"><i class="fas fa-sparkles"></i></div>
+            <p>Ketik prompt untuk mulai generate text visual</p>
+        </div>
     </div>
-  </div>
 
-  <!-- Input bar -->
-  <div class="input-bar">
-    <div class="input-wrapper">
-      <textarea
-        id="prompt"
-        rows="1"
-        placeholder="Deskripsikan text art kamu…"
-        onkeydown="handleKey(event)"
-        oninput="autoResize(this)"
-      ></textarea>
-      <button class="send-btn" id="sendBtn" onclick="send()" title="Kirim (Enter)">➤</button>
+    <!-- Render Sandbox -->
+    <div id="render-sandbox" class="render-temp"></div>
+
+    <!-- Bottom Input Bar -->
+    <div class="chat-navbar">
+        <div class="color-picker-wrapper" title="Pilih warna">
+            <input type="color" id="colorPicker" value="#8b5cf6">
+        </div>
+        <div class="input-group">
+            <i class="fas fa-pen-nib input-icon"></i>
+            <input type="text" id="promptInput" placeholder="Ketik prompt di sini..." />
+        </div>
+        <button class="send-btn" id="sendBtn" title="Kirim">
+            <i class="fas fa-paper-plane"></i>
+        </button>
     </div>
-    <div class="tools">
-      <button class="tool-btn" onclick="pickColor()">
-        <span class="color-dot" id="colorDot"></span>
-        Warna
-      </button>
-      <span class="tool-hint">Enter ↵ kirim &nbsp;·&nbsp; Shift+Enter baris baru</span>
-    </div>
-  </div>
 
-  <input type="color" id="colorPicker" style="display:none" value="#A67CFF" />
+    <script is:inline>
+        const chatList = document.getElementById('chat-list');
+        const promptInput = document.getElementById('promptInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const colorPicker = document.getElementById('colorPicker');
+        const sandbox = document.getElementById('render-sandbox');
+        const emptyState = document.getElementById('empty-state');
 
+        // Color Picker Logic
+        colorPicker.addEventListener('change', (e) => {
+            promptInput.value += ` ${e.target.value}`;
+            promptInput.focus();
+        });
+
+        function getTime() {
+            return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function handleSend() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) return;
+
+            // Remove empty state
+            if (emptyState) emptyState.remove();
+
+            // 1. User Bubble
+            addBubble(prompt, 'user');
+            promptInput.value = '';
+
+            // 2. AI Loading Bubble
+            const loadingId = 'ai-' + Date.now();
+            addBubble(null, 'ai', loadingId, true);
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const htmlContent = await response.text();
+                
+                // 3. Render ke Canvas
+                await renderToCanvas(htmlContent, loadingId);
+
+            } catch (err) {
+                document.getElementById(loadingId).querySelector('.ai-bubble').innerHTML = 
+                    `<i class="fas fa-circle-exclamation" style="color:var(--md-error);margin-right:6px;"></i>Error: ${err.message}`;
+            }
+        }
+
+        function addBubble(content, sender, id = null, loading = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `bubble-wrapper ${sender}-wrapper`;
+            if (id) wrapper.id = id;
+
+            if (sender === 'user') {
+                // ── User: rounded pill, right-aligned ──
+                const bubble = document.createElement('div');
+                bubble.className = 'user-bubble';
+                bubble.textContent = content;
+                wrapper.appendChild(bubble);
+
+                const meta = document.createElement('div');
+                meta.className = 'bubble-meta';
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'meta-time';
+                timeSpan.textContent = getTime();
+                meta.appendChild(timeSpan);
+                wrapper.appendChild(meta);
+
+            } else {
+                // ── AI: full-width stripe ──
+                const inner = document.createElement('div');
+                inner.className = 'ai-inner';
+
+                const label = document.createElement('div');
+                label.className = 'ai-label';
+                label.innerHTML = '<i class="fas fa-robot"></i> Yuai15';
+                inner.appendChild(label);
+
+                const bubble = document.createElement('div');
+                bubble.className = 'ai-bubble';
+                if (loading) {
+                    bubble.innerHTML = `<div class="loading-dots"><span></span><span></span><span></span></div>`;
+                }
+                inner.appendChild(bubble);
+
+                const meta = document.createElement('div');
+                meta.className = 'bubble-meta';
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'meta-time';
+                timeSpan.textContent = getTime();
+                meta.appendChild(timeSpan);
+                inner.appendChild(meta);
+
+                wrapper.appendChild(inner);
+            }
+
+            chatList.appendChild(wrapper);
+            chatList.scrollTop = chatList.scrollHeight;
+        }
+
+        async function renderToCanvas(html, targetId) {
+            // Masukkan ke sandbox tersembunyi
+            sandbox.innerHTML = html;
+            
+            // Tunggu sebentar biar font/style terload (optional tapi disarankan)
+            await new Promise(r => setTimeout(r, 500));
+
+            const targetElement = sandbox.querySelector('.text') || sandbox;
+
+            try {
+                const canvas = await html2canvas(targetElement, {
+                    backgroundColor: null,
+                    logging: false,
+                    useCORS: true
+                });
+
+                const wrapperEl = document.getElementById(targetId);
+                const aiBubble = wrapperEl.querySelector('.ai-bubble');
+                aiBubble.innerHTML = ''; // Hapus loading
+                aiBubble.appendChild(canvas);
+
+                // Add download button to meta row
+                const meta = wrapperEl.querySelector('.bubble-meta');
+                const dlBtn = document.createElement('button');
+                dlBtn.className = 'download-btn';
+                dlBtn.innerHTML = '<i class="fas fa-download"></i> Unduh';
+                dlBtn.addEventListener('click', () => {
+                    const link = document.createElement('a');
+                    link.download = `yuai15-${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+                meta.appendChild(dlBtn);
+
+                // Bersihkan sandbox
+                sandbox.innerHTML = '';
+                chatList.scrollTop = chatList.scrollHeight;
+            } catch (e) {
+                console.error(e);
+                document.getElementById(targetId).querySelector('.ai-bubble').innerHTML =
+                    '<i class="fas fa-triangle-exclamation" style="color:var(--md-error);margin-right:6px;"></i>Gagal render canvas.';
+            }
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        promptInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+    </script>
 </body>
-
-<script>
-  const chat      = document.getElementById('chat');
-  const emptyEl   = document.getElementById('emptyState');
-  const sendBtn   = document.getElementById('sendBtn');
-  const colorDot  = document.getElementById('colorDot');
-
-  let currentScale = 1;
-  let lastHTML     = '';
-  let isLoading    = false;
-
-  /* ── Helpers ── */
-  function hideEmpty() { emptyEl.style.display = 'none'; }
-
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-  }
-
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-  }
-
-  function scrollBottom() { chat.scrollTop = chat.scrollHeight; }
-
-  /* ── Send ── */
-  async function send() {
-    if (isLoading) return;
-    const promptEl = document.getElementById('prompt');
-    const prompt   = promptEl.value.trim();
-    if (!prompt) return;
-
-    hideEmpty();
-    addUserBubble(prompt);
-    promptEl.value = '';
-    promptEl.style.height = 'auto';
-
-    isLoading = true;
-    sendBtn.style.opacity = '.5';
-    sendBtn.style.pointerEvents = 'none';
-
-    const loadingNode = addLoadingBlock();
-
-    try {
-      // Fetch ke Astro API endpoint — response adalah HTML murni
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-
-      chat.removeChild(loadingNode);
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      // API returns raw HTML string (bukan JSON)
-      const html = await res.text();
-      lastHTML   = html;
-      await addAIBlock(html);
-
-    } catch (err) {
-      chat.removeChild(loadingNode);
-      addErrorBlock(err.message);
-    } finally {
-      isLoading = false;
-      sendBtn.style.opacity = '';
-      sendBtn.style.pointerEvents = '';
-    }
-  }
-
-  /* ── Bubbles ── */
-  function addUserBubble(text) {
-    const el = document.createElement('div');
-    el.className = 'user-bubble';
-    el.textContent = text;
-    chat.appendChild(el);
-    scrollBottom();
-  }
-
-  function addLoadingBlock() {
-    const wrapper = makeAIWrapper();
-    const card    = document.createElement('div');
-    card.className = 'loading-card';
-    card.innerHTML = `<span class="loading-dot"></span>
-                      <span class="loading-dot"></span>
-                      <span class="loading-dot"></span>`;
-    wrapper.appendChild(card);
-    chat.appendChild(wrapper);
-    scrollBottom();
-    return wrapper;
-  }
-
-  function addErrorBlock(msg) {
-    const wrapper = makeAIWrapper();
-    const card    = document.createElement('div');
-    card.className = 'error-card';
-    card.textContent = `⚠ Gagal: ${msg}`;
-    wrapper.appendChild(card);
-    chat.appendChild(wrapper);
-    scrollBottom();
-  }
-
-  async function addAIBlock(html) {
-    const wrapper = makeAIWrapper();
-    const aiCard  = document.createElement('div');
-    aiCard.className = 'ai-card';
-
-    // Render HTML ke canvas via html2canvas
-    const preview  = document.createElement('div');
-    preview.className = 'preview-container';
-
-    const hidden = document.createElement('div');
-    hidden.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
-    hidden.innerHTML = html;
-    document.body.appendChild(hidden);
-    await document.fonts.ready;
-
-    let canvas;
-    try {
-      canvas = await html2canvas(hidden, { backgroundColor: null, scale: currentScale });
-    } finally {
-      document.body.removeChild(hidden);
-    }
-
-    preview.appendChild(canvas);
-
-    // Action bar
-    const actions = document.createElement('div');
-    actions.className = 'actions';
-
-    const dlBtn = document.createElement('button');
-    dlBtn.className = 'primary-btn';
-    dlBtn.innerHTML = '↓ Download PNG';
-    dlBtn.onclick   = () => downloadCanvas(canvas);
-
-    const resBtn = document.createElement('button');
-    resBtn.className = 'secondary-btn';
-    resBtn.textContent = 'Resolusi';
-    resBtn.onclick = () => toggleRes(aiCard);
-
-    actions.appendChild(dlBtn);
-    actions.appendChild(resBtn);
-
-    // Resolution panel
-    const resPanel = buildResPanel(preview, aiCard, dlBtn);
-
-    aiCard.appendChild(preview);
-    aiCard.appendChild(actions);
-    aiCard.appendChild(resPanel);
-
-    wrapper.appendChild(aiCard);
-    chat.appendChild(wrapper);
-    scrollBottom();
-  }
-
-  /* ── Utilities ── */
-  function makeAIWrapper() {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'ai-block';
-    const label = document.createElement('div');
-    label.className = 'ai-label';
-    label.innerHTML = `<span class="ai-dot"></span>
-                       <span class="ai-label-text">TextArt AI</span>`;
-    wrapper.appendChild(label);
-    return wrapper;
-  }
-
-  function downloadCanvas(canvas) {
-    const a = document.createElement('a');
-    a.download = 'textart.png';
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-  }
-
-  function toggleRes(card) {
-    const panel = card.querySelector('.res-panel');
-    panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
-  }
-
-  function buildResPanel(preview, card, dlBtn) {
-    const panel = document.createElement('div');
-    panel.className = 'res-panel';
-
-    const options = [
-      { label: '360p', scale: 1 },
-      { label: '720p', scale: 2 },
-      { label: '1080p', scale: 3 },
-    ];
-
-    options.forEach(({ label, scale }) => {
-      const opt = document.createElement('div');
-      opt.className = 'res-option' + (scale === 1 ? ' active' : '');
-      opt.textContent = label;
-      opt.onclick = async () => {
-        currentScale = scale;
-        panel.querySelectorAll('.res-option').forEach(o => o.classList.remove('active'));
-        opt.classList.add('active');
-        preview.innerHTML = '';
-
-        const h = document.createElement('div');
-        h.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
-        h.innerHTML = lastHTML;
-        document.body.appendChild(h);
-        await document.fonts.ready;
-        let c;
-        try { c = await html2canvas(h, { backgroundColor: null, scale }); }
-        finally { document.body.removeChild(h); }
-        preview.appendChild(c);
-        dlBtn.onclick = () => downloadCanvas(c);
-      };
-
-      panel.appendChild(opt);
-    });
-
-    return panel;
-  }
-
-  /* ── Color picker ── */
-  function pickColor() {
-    const picker = document.getElementById('colorPicker');
-    picker.click();
-    picker.onchange = () => {
-      colorDot.style.background = picker.value;
-      document.getElementById('prompt').value += ` color:${picker.value};`;
-    };
-  }
-</script>
 </html>
