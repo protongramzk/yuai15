@@ -1,17 +1,603 @@
 ---
-
+// pages/index.astro
+// TextArt AI — Dark Purple Material UI
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TextArt AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:               #0D0A14;
+      --bg-2:             #110E1A;
+      --surface:          #181424;
+      --surface-2:        #1F1A30;
+      --surface-3:        #261F3A;
+      --primary:          #A67CFF;
+      --primary-dim:      #7C4FE0;
+      --primary-glow:     rgba(166,124,255,.18);
+      --primary-container:#1E1632;
+      --accent:           #C4A8FF;
+      --accent-2:         #E0D4FF;
+      --border:           rgba(166,124,255,.12);
+      --border-hover:     rgba(166,124,255,.32);
+      --text:             #EDE8FF;
+      --text-secondary:   #9B90C2;
+      --text-muted:       #5E5680;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* ── Ambient glow ── */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -25%; left: -15%;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(124,79,224,.09) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%; right: -10%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(166,124,255,.06) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Header ── */
+    header {
+      position: relative; z-index: 10;
+      padding: 13px 22px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 13px;
+    }
+
+    .header-icon {
+      width: 36px; height: 36px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--primary-dim), var(--primary));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+      box-shadow: 0 4px 14px rgba(124,79,224,.4);
+    }
+
+    .header-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px; font-weight: 700;
+      color: var(--accent); letter-spacing: .02em;
+    }
+    .header-text p {
+      font-size: 11px; color: var(--text-muted);
+      letter-spacing: .04em; text-transform: uppercase; margin-top: 1px;
+    }
+
+    .header-badge {
+      margin-left: auto;
+      background: var(--primary-container);
+      border: 1px solid var(--border);
+      color: var(--primary);
+      font-size: 10px; font-weight: 600;
+      padding: 3px 9px; border-radius: 20px;
+      letter-spacing: .05em; text-transform: uppercase;
+    }
+
+    /* ── Chat ── */
+    .chat {
+      flex: 1; overflow-y: auto;
+      padding: 28px 22px;
+      position: relative; z-index: 1;
+      scroll-behavior: smooth;
+    }
+    .chat::-webkit-scrollbar { width: 4px; }
+    .chat::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; gap: 16px; text-align: center;
+      opacity: .55; padding-bottom: 48px;
+    }
+    .empty-icon {
+      width: 64px; height: 64px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    .empty-state h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px; color: var(--text-secondary);
+    }
+    .empty-state p {
+      font-size: 12px; color: var(--text-muted);
+      max-width: 210px; line-height: 1.75;
+    }
+
+    /* ── User bubble ── */
+    .user-bubble {
+      max-width: 72%; margin-left: auto;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--primary-container), #241B3E);
+      border: 1px solid var(--border);
+      border-radius: 18px 18px 4px 18px;
+      animation: slideUp .3s cubic-bezier(.16,1,.3,1);
+      font-size: 14px; line-height: 1.6; color: var(--accent-2);
+    }
+
+    /* ── AI block ── */
+    .ai-block {
+      width: 100%; margin: 6px 0 24px;
+      animation: slideUp .35s cubic-bezier(.16,1,.3,1);
+    }
+
+    .ai-label {
+      display: flex; align-items: center;
+      gap: 7px; margin-bottom: 9px;
+    }
+    .ai-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 7px var(--primary);
+      animation: pulse 2s infinite;
+    }
+    .ai-label-text {
+      font-size: 11px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .08em; font-weight: 500;
+    }
+
+    .ai-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      transition: border-color .2s;
+    }
+    .ai-card:hover { border-color: var(--border-hover); }
+
+    .preview-container {
+      display: flex; justify-content: center; align-items: center;
+      min-height: 180px; padding: 24px;
+      background: linear-gradient(135deg, var(--bg-2), var(--surface));
+    }
+
+    .actions {
+      padding: 11px 14px; display: flex;
+      gap: 8px; flex-wrap: wrap;
+      border-top: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+
+    /* ── Buttons ── */
+    button {
+      border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--primary-dim), var(--primary));
+      color: #fff; padding: 9px 15px;
+      border-radius: 10px; font-size: 13px;
+      box-shadow: 0 4px 14px rgba(124,79,224,.3);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .primary-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,79,224,.45); }
+    .primary-btn:active { transform: translateY(0); }
+
+    .secondary-btn {
+      background: var(--surface-3); color: var(--text-secondary);
+      padding: 9px 13px; border-radius: 10px; font-size: 13px;
+      border: 1px solid var(--border);
+    }
+    .secondary-btn:hover { background: var(--primary-container); color: var(--accent); border-color: var(--border-hover); }
+
+    /* ── Resolution panel ── */
+    .res-panel { display: none; gap: 6px; padding: 0 14px 11px; background: var(--surface-2); }
+
+    .res-option {
+      background: var(--surface-3); color: var(--text-secondary);
+      padding: 5px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 12px; font-family: 'Syne', sans-serif; font-weight: 600;
+      border: 1px solid var(--border); transition: all .18s;
+    }
+    .res-option:hover { border-color: var(--border-hover); color: var(--accent); }
+    .res-option.active { background: var(--primary-container); color: var(--primary); border-color: var(--primary); }
+
+    /* ── Input bar ── */
+    .input-bar {
+      position: relative; z-index: 10;
+      background: var(--surface);
+      padding: 13px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .input-wrapper {
+      display: flex; gap: 10px; align-items: flex-end;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 10px 10px 16px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .input-wrapper:focus-within {
+      border-color: var(--border-hover);
+      box-shadow: 0 0 0 3px rgba(166,124,255,.08);
+    }
+
+    textarea {
+      flex: 1; resize: none; border: none; outline: none;
+      background: transparent; color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; line-height: 1.6; max-height: 120px;
+    }
+    textarea::placeholder { color: var(--text-muted); }
+
+    .send-btn {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--primary-dim), var(--primary));
+      color: #fff; border-radius: 10px; font-size: 15px;
+      box-shadow: 0 4px 12px rgba(124,79,224,.35);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .send-btn:hover { transform: scale(1.06); box-shadow: 0 6px 18px rgba(124,79,224,.5); }
+    .send-btn:active { transform: scale(.95); }
+
+    /* ── Tools row ── */
+    .tools {
+      margin-top: 9px; display: flex;
+      align-items: center; gap: 6px; padding: 0 4px;
+    }
+
+    .tool-btn {
+      background: transparent; color: var(--text-muted);
+      padding: 5px 11px; border-radius: 8px; font-size: 12px;
+      border: 1px solid transparent;
+      display: flex; align-items: center; gap: 5px;
+      transition: all .18s;
+    }
+    .tool-btn:hover { background: var(--surface-2); color: var(--accent); border-color: var(--border); }
+
+    .tool-hint { margin-left: auto; font-size: 11px; color: var(--text-muted); opacity: .5; }
+
+    .color-dot {
+      width: 13px; height: 13px; border-radius: 4px;
+      background: #A67CFF;
+      border: 1px solid rgba(255,255,255,.2);
+      display: inline-block; transition: background .2s;
+    }
+
+    /* ── Loading ── */
+    .loading-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; min-height: 140px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .loading-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--primary);
+      animation: dotBounce 1.2s ease-in-out infinite;
+    }
+    .loading-dot:nth-child(2) { animation-delay: .2s; }
+    .loading-dot:nth-child(3) { animation-delay: .4s; }
+
+    /* ── Error ── */
+    .error-card {
+      background: rgba(255,80,80,.06);
+      border: 1px solid rgba(255,80,80,.2);
+      border-radius: 16px; padding: 18px 20px;
+      color: #FF9090; font-size: 13px;
+    }
+
+    /* ── Keyframes ── */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.4; transform:scale(.7); }
+    }
+    @keyframes dotBounce {
+      0%,80%,100% { transform:scale(.6); opacity:.3; }
+      40%          { transform:scale(1); opacity:1; }
+    }
+
+    * { scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-icon">✦</div>
+    <div class="header-text">
+      <h1>TextArt AI</h1>
+      <p>HTML Text Generator</p>
+    </div>
+    <span class="header-badge">Beta</span>
+  </header>
+
+  <!-- Chat feed -->
+  <div class="chat" id="chat">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">✦</div>
+      <h3>Mulai berkreasi</h3>
+      <p>Deskripsikan text art yang kamu inginkan dan biarkan AI menghasilkannya</p>
+    </div>
+  </div>
+
+  <!-- Input bar -->
+  <div class="input-bar">
+    <div class="input-wrapper">
+      <textarea
+        id="prompt"
+        rows="1"
+        placeholder="Deskripsikan text art kamu…"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="send()" title="Kirim (Enter)">➤</button>
+    </div>
+    <div class="tools">
+      <button class="tool-btn" onclick="pickColor()">
+        <span class="color-dot" id="colorDot"></span>
+        Warna
+      </button>
+      <span class="tool-hint">Enter ↵ kirim &nbsp;·&nbsp; Shift+Enter baris baru</span>
+    </div>
+  </div>
+
+  <input type="color" id="colorPicker" style="display:none" value="#A67CFF" />
+
+</body>
+
+<script>
+  const chat      = document.getElementById('chat');
+  const emptyEl   = document.getElementById('emptyState');
+  const sendBtn   = document.getElementById('sendBtn');
+  const colorDot  = document.getElementById('colorDot');
+
+  let currentScale = 1;
+  let lastHTML     = '';
+  let isLoading    = false;
+
+  /* ── Helpers ── */
+  function hideEmpty() { emptyEl.style.display = 'none'; }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  function scrollBottom() { chat.scrollTop = chat.scrollHeight; }
+
+  /* ── Send ── */
+  async function send() {
+    if (isLoading) return;
+    const promptEl = document.getElementById('prompt');
+    const prompt   = promptEl.value.trim();
+    if (!prompt) return;
+
+    hideEmpty();
+    addUserBubble(prompt);
+    promptEl.value = '';
+    promptEl.style.height = 'auto';
+
+    isLoading = true;
+    sendBtn.style.opacity = '.5';
+    sendBtn.style.pointerEvents = 'none';
+
+    const loadingNode = addLoadingBlock();
+
+    try {
+      // Fetch ke Astro API endpoint — response adalah HTML murni
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+
+      chat.removeChild(loadingNode);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // API returns raw HTML string (bukan JSON)
+      const html = await res.text();
+      lastHTML   = html;
+      await addAIBlock(html);
+
+    } catch (err) {
+      chat.removeChild(loadingNode);
+      addErrorBlock(err.message);
+    } finally {
+      isLoading = false;
+      sendBtn.style.opacity = '';
+      sendBtn.style.pointerEvents = '';
+    }
+  }
+
+  /* ── Bubbles ── */
+  function addUserBubble(text) {
+    const el = document.createElement('div');
+    el.className = 'user-bubble';
+    el.textContent = text;
+    chat.appendChild(el);
+    scrollBottom();
+  }
+
+  function addLoadingBlock() {
+    const wrapper = makeAIWrapper();
+    const card    = document.createElement('div');
+    card.className = 'loading-card';
+    card.innerHTML = `<span class="loading-dot"></span>
+                      <span class="loading-dot"></span>
+                      <span class="loading-dot"></span>`;
+    wrapper.appendChild(card);
+    chat.appendChild(wrapper);
+    scrollBottom();
+    return wrapper;
+  }
+
+  function addErrorBlock(msg) {
+    const wrapper = makeAIWrapper();
+    const card    = document.createElement('div');
+    card.className = 'error-card';
+    card.textContent = `⚠ Gagal: ${msg}`;
+    wrapper.appendChild(card);
+    chat.appendChild(wrapper);
+    scrollBottom();
+  }
+
+  async function addAIBlock(html) {
+    const wrapper = makeAIWrapper();
+    const aiCard  = document.createElement('div');
+    aiCard.className = 'ai-card';
+
+    // Render HTML ke canvas via html2canvas
+    const preview  = document.createElement('div');
+    preview.className = 'preview-container';
+
+    const hidden = document.createElement('div');
+    hidden.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+    hidden.innerHTML = html;
+    document.body.appendChild(hidden);
+    await document.fonts.ready;
+
+    let canvas;
+    try {
+      canvas = await html2canvas(hidden, { backgroundColor: null, scale: currentScale });
+    } finally {
+      document.body.removeChild(hidden);
+    }
+
+    preview.appendChild(canvas);
+
+    // Action bar
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'primary-btn';
+    dlBtn.innerHTML = '↓ Download PNG';
+    dlBtn.onclick   = () => downloadCanvas(canvas);
+
+    const resBtn = document.createElement('button');
+    resBtn.className = 'secondary-btn';
+    resBtn.textContent = 'Resolusi';
+    resBtn.onclick = () => toggleRes(aiCard);
+
+    actions.appendChild(dlBtn);
+    actions.appendChild(resBtn);
+
+    // Resolution panel
+    const resPanel = buildResPanel(preview, aiCard, dlBtn);
+
+    aiCard.appendChild(preview);
+    aiCard.appendChild(actions);
+    aiCard.appendChild(resPanel);
+
+    wrapper.appendChild(aiCard);
+    chat.appendChild(wrapper);
+    scrollBottom();
+  }
+
+  /* ── Utilities ── */
+  function makeAIWrapper() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ai-block';
+    const label = document.createElement('div');
+    label.className = 'ai-label';
+    label.innerHTML = `<span class="ai-dot"></span>
+                       <span class="ai-label-text">TextArt AI</span>`;
+    wrapper.appendChild(label);
+    return wrapper;
+  }
+
+  function downloadCanvas(canvas) {
+    const a = document.createElement('a');
+    a.download = 'textart.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }
+
+  function toggleRes(card) {
+    const panel = card.querySelector('.res-panel');
+    panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+  }
+
+  function buildResPanel(preview, card, dlBtn) {
+    const panel = document.createElement('div');
+    panel.className = 'res-panel';
+
+    const options = [
+      { label: '360p', scale: 1 },
+      { label: '720p', scale: 2 },
+      { label: '1080p', scale: 3 },
+    ];
+
+    options.forEach(({ label, scale }) => {
+      const opt = document.createElement('div');
+      opt.className = 'res-option' + (scale === 1 ? ' active' : '');
+      opt.textContent = label;
+      opt.onclick = async () => {
+        currentScale = scale;
+        panel.querySelectorAll('.res-option').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        preview.innerHTML = '';
+
+        const h = document.createElement('div');
+        h.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+        h.innerHTML = lastHTML;
+        document.body.appendChild(h);
+        await document.fonts.ready;
+        let c;
+        try { c = await html2canvas(h, { backgroundColor: null, scale }); }
+        finally { document.body.removeChild(h); }
+        preview.appendChild(c);
+        dlBtn.onclick = () => downloadCanvas(c);
+      };
+
+      panel.appendChild(opt);
+    });
+
+    return panel;
+  }
+
+  /* ── Color picker ── */
+  function pickColor() {
+    const picker = document.getElementById('colorPicker');
+    picker.click();
+    picker.onchange = () => {
+      colorDot.style.background = picker.value;
+      document.getElementById('prompt').value += ` color:${picker.value};`;
+    };
+  }
+</script>
 </html>
