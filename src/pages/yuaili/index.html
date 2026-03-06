@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YUAI-ND · Slide Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <!-- PDF libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:        #07050d;
+      --bg-surface:     #0c0a14;
+      --bg-elevated:    #110e1c;
+      --bg-overlay:     #17132a;
+      --accent:         #d6006e;
+      --accent-soft:    #f0207e;
+      --accent-vivid:   #ff2d8a;
+      --accent-glow:    rgba(214, 0, 110, 0.4);
+      --accent-dim:     rgba(214, 0, 110, 0.1);
+      --accent-border:  rgba(214, 0, 110, 0.28);
+      --text-primary:   #f0eaf8;
+      --text-secondary: #8a849e;
+      --text-dim:       #42374f;
+      --border:         rgba(255,255,255,0.055);
+      --radius-sm:      8px;
+      --radius-md:      13px;
+      --radius-lg:      20px;
+      --radius-xl:      28px;
+      --font:           'Geist', sans-serif;
+      --font-mono:      'Geist Mono', monospace;
+    }
+
+    html, body { height: 100%; background: var(--bg-base); color: var(--text-primary); font-family: var(--font); font-size: 15px; overflow: hidden; }
+
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 55% at 10%  8%,  rgba(214,  0, 110, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 45% at 88% 85%,  rgba(180,  0,  80, 0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 45% 35% at 55% 50%,  rgba(140,  0,  60, 0.07) 0%, transparent 65%),
+        radial-gradient(ellipse 35% 30% at 75% 18%,  rgba(100,  0, 100, 0.08) 0%, transparent 50%);
+    }
+
+    .app { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11, 8, 20, 0.75);
+      backdrop-filter: blur(22px); flex-shrink: 0;
+    }
+
+    .header-logo {
+      width: 30px; height: 30px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent) 0%, #a0006a 100%);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: #fff;
+    }
+
+    .header-title { display: flex; flex-direction: column; gap: 1px; }
+    .header-name { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.4px; }
+    .header-sub  { font-size: 11px; color: var(--text-secondary); }
+
+    .header-badge {
+      margin-left: auto; padding: 3px 10px;
+      background: var(--accent-dim); border: 1px solid var(--accent-border);
+      border-radius: 20px; font-size: 10.5px; color: var(--accent-soft);
+      font-family: var(--font-mono); font-weight: 600;
+    }
+
+    /* ── Chat list ── */
+    .chat-list {
+      flex: 1; overflow-y: auto;
+      padding: 24px 20px 8px;
+      display: flex; flex-direction: column; gap: 20px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-list::-webkit-scrollbar { width: 3px; }
+    .chat-list::-webkit-scrollbar-track { background: transparent; }
+    .chat-list::-webkit-scrollbar-thumb { background: var(--bg-overlay); border-radius: 3px; }
+
+    /* ── Empty ── */
+    .empty-state {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px; padding: 40px; text-align: center;
+      animation: fadeUp 0.55s ease both;
+    }
+
+    .empty-icon {
+      width: 68px; height: 68px;
+      background: var(--accent-dim); border: 1px solid var(--accent-border);
+      border-radius: 20px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .empty-icon .material-icons { font-size: 30px; color: var(--accent-vivid); }
+    .empty-title { font-size: 17px; font-weight: 600; }
+    .empty-desc  { font-size: 13px; color: var(--text-secondary); line-height: 1.6; max-width: 290px; }
+
+    /* ── User bubble ── */
+    .msg-user { display: flex; justify-content: flex-end; animation: fadeUp 0.3s ease both; }
+
+    .msg-user-bubble {
+      max-width: 68%;
+      background: linear-gradient(135deg, var(--accent) 0%, #a8005a 100%);
+      color: #fff; padding: 11px 15px;
+      border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+      font-size: 14px; line-height: 1.55;
+    }
+
+    .msg-user-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; justify-content: flex-end; }
+
+    .attach-chip {
+      display: flex; align-items: center; gap: 4px;
+      padding: 2px 8px; background: rgba(255,255,255,0.13);
+      border-radius: 12px; font-size: 11px; color: rgba(255,255,255,0.75);
+    }
+
+    .attach-chip .material-icons { font-size: 12px; }
+
+    /* ── AI message ── */
+    .msg-ai { display: flex; flex-direction: column; gap: 7px; animation: fadeUp 0.4s ease both; }
+
+    .msg-ai-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 10.5px; color: var(--text-dim);
+      font-family: var(--font-mono); letter-spacing: 0.4px;
+    }
+
+    .msg-ai-label-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent-vivid);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* ── AI card ── */
+    .msg-ai-card {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .msg-ai-card:hover { border-color: var(--accent-border); }
+
+    .msg-ai-card-header {
+      padding: 15px 17px 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .slide-icon {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: var(--accent-dim); border: 1px solid var(--accent-border);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 16px rgba(214, 0, 110, 0.2);
+    }
+
+    .slide-icon .material-icons { font-size: 20px; color: var(--accent-vivid); }
+
+    .doc-info { flex: 1; min-width: 0; }
+
+    .doc-filename {
+      font-family: var(--font-mono); font-size: 12.5px; font-weight: 700;
+      color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .doc-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    .msg-ai-card-footer {
+      padding: 11px 17px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+
+    .doc-timestamp { font-size: 10.5px; color: var(--text-dim); font-family: var(--font-mono); }
+
+    /* ── Buttons ── */
+    .btn-row { display: flex; gap: 8px; align-items: center; }
+
+    .btn-dl {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 14px; border: none; border-radius: var(--radius-md);
+      font-family: var(--font); font-size: 12.5px; font-weight: 600;
+      cursor: pointer; text-decoration: none; transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+
+    .btn-dl:hover { transform: translateY(-1px); }
+    .btn-dl:active { transform: translateY(0); }
+    .btn-dl .material-icons { font-size: 15px; }
+
+    .btn-html { background: var(--bg-overlay); color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-html:hover { border-color: var(--accent-border); color: var(--text-primary); box-shadow: none; }
+
+    .btn-pdf  { background: var(--accent); color: #fff; }
+    .btn-pdf:hover  { background: var(--accent-soft); box-shadow: 0 4px 18px var(--accent-glow); }
+    .btn-pdf:disabled { background: var(--bg-overlay); color: var(--text-dim); cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── Progress overlay (inside card) ── */
+    .pdf-progress {
+      display: none; align-items: center; gap: 10px;
+      padding: 10px 17px; border-top: 1px solid var(--border);
+      background: var(--bg-surface);
+    }
+
+    .pdf-progress.active { display: flex; }
+
+    .pdf-progress-bar-wrap {
+      flex: 1; height: 3px; background: var(--bg-overlay); border-radius: 3px; overflow: hidden;
+    }
+
+    .pdf-progress-bar { height: 100%; width: 0%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease; }
+    .pdf-progress-label { font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); white-space: nowrap; }
+
+    /* ── Typing ── */
+    .msg-typing { display: flex; align-items: center; gap: 10px; animation: fadeUp 0.3s ease both; }
+
+    .typing-dots {
+      display: flex; gap: 5px; padding: 13px 17px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    }
+
+    .typing-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent-vivid);
+      animation: typingBounce 1.2s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    .typing-label { font-size: 12px; color: var(--text-secondary); }
+
+    /* ── Navbar ── */
+    .navbar {
+      padding: 11px 15px;
+      background: rgba(11, 8, 20, 0.88); backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+
+    .attached-preview { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 9px; padding: 0 3px; }
+
+    .attached-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 10px; background: var(--bg-overlay);
+      border: 1px solid var(--accent-border); border-radius: 20px;
+      font-size: 11.5px; color: var(--text-secondary); max-width: 175px;
+    }
+
+    .attached-chip > span.text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    .attached-chip .material-icons { font-size: 13px; color: var(--accent-soft); flex-shrink: 0; }
+
+    .chip-remove { background: none; border: none; cursor: pointer; color: var(--text-dim); display: flex; align-items: center; padding: 0; transition: color 0.2s; }
+    .chip-remove:hover { color: #ff4488; }
+    .chip-remove .material-icons { font-size: 13px; }
+
+    .input-row { display: flex; align-items: flex-end; gap: 9px; }
+    .input-actions { display: flex; align-items: center; padding-bottom: 5px; }
+
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 50%; border: none;
+      background: transparent; color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s;
+    }
+
+    .icon-btn:hover { background: var(--bg-overlay); color: var(--text-primary); }
+    .icon-btn .material-icons { font-size: 21px; }
+
+    #fileInput { display: none; }
+
+    .input-wrap {
+      flex: 1; background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); display: flex; align-items: flex-end;
+      padding: 9px 13px; gap: 8px; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrap:focus-within { border-color: var(--accent-border); box-shadow: 0 0 0 3px var(--accent-dim); }
+
+    #promptInput {
+      flex: 1; background: transparent; border: none; outline: none; resize: none;
+      color: var(--text-primary); font-family: var(--font); font-size: 14px; line-height: 1.5;
+      max-height: 120px; min-height: 22px; scrollbar-width: none;
+    }
+
+    #promptInput::placeholder { color: var(--text-dim); }
+    #promptInput::-webkit-scrollbar { display: none; }
+
+    .send-btn {
+      width: 34px; height: 34px; border-radius: 50%; border: none;
+      background: var(--accent); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+
+    .send-btn:hover { background: var(--accent-soft); box-shadow: 0 4px 16px var(--accent-glow); transform: scale(1.07); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn:disabled { background: var(--bg-overlay); color: var(--text-dim); cursor: not-allowed; transform: none; box-shadow: none; }
+    .send-btn .material-icons { font-size: 17px; }
+
+    .slide-limit-row { display: flex; align-items: center; gap: 7px; margin-top: 8px; padding: 0 3px; }
+    .slide-limit-label { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+
+    .slide-limit-input {
+      width: 48px; background: var(--bg-overlay); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-secondary);
+      font-family: var(--font-mono); font-size: 12px; padding: 3px 8px; outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .slide-limit-input:focus { border-color: var(--accent-border); }
+
+    /* ── Modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; animation: fadeIn 0.18s ease; }
+
+    .modal {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 22px; width: 90%; max-width: 390px;
+      animation: scaleIn 0.22s ease;
+    }
+
+    .modal-title    { font-size: 14.5px; font-weight: 600; margin-bottom: 4px; }
+    .modal-subtitle { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; }
+    .modal-filename { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent-soft); margin-bottom: 13px; padding: 7px 11px; background: var(--accent-dim); border-radius: var(--radius-sm); word-break: break-all; }
+
+    .modal-input {
+      width: 100%; background: var(--bg-overlay); border: 1px solid var(--border);
+      border-radius: var(--radius-md); color: var(--text-primary);
+      font-family: var(--font); font-size: 14px; padding: 11px 13px; outline: none; resize: none;
+      transition: border-color 0.2s;
+    }
+
+    .modal-input:focus { border-color: var(--accent-border); }
+    .modal-input::placeholder { color: var(--text-dim); }
+
+    .modal-actions { display: flex; gap: 9px; margin-top: 14px; justify-content: flex-end; }
+
+    .btn-ghost   { padding: 8px 16px; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-secondary); font-family: var(--font); font-size: 13px; cursor: pointer; transition: border-color 0.2s; }
+    .btn-ghost:hover { border-color: var(--accent-border); }
+    .btn-primary { padding: 8px 16px; background: var(--accent); border: none; border-radius: var(--radius-md); color: #fff; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn-primary:hover { background: var(--accent-soft); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.93); } to { opacity: 1; transform: scale(1); } }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <div class="header-logo">YU</div>
+    <div class="header-title">
+      <div class="header-name">YUAI-ND</div>
+      <div class="header-sub">Slide Generator</div>
+    </div>
+    <div class="header-badge">Mistral AI</div>
+  </header>
+
+  <div class="chat-list" id="chatList">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon"><span class="material-icons">auto_awesome</span></div>
+      <div class="empty-title">Buat presentasi dengan AI</div>
+      <div class="empty-desc">Deskripsikan topik presentasimu. AI akan generate slide 16:9 dengan design system konsisten, siap export ke PDF.</div>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <div class="attached-preview" id="attachedPreview"></div>
+    <div class="input-row">
+      <div class="input-actions">
+        <button class="icon-btn" title="Tambah gambar" onclick="document.getElementById('fileInput').click()">
+          <span class="material-icons">attach_file</span>
+        </button>
+        <input type="file" id="fileInput" multiple accept="image/*,.png,.jpg,.jpeg,.webp" />
+      </div>
+      <div class="input-wrap">
+        <textarea id="promptInput" rows="1" placeholder="Deskripsikan presentasi yang ingin dibuat..."></textarea>
+        <button class="send-btn" id="sendBtn">
+          <span class="material-icons">arrow_upward</span>
+        </button>
+      </div>
+    </div>
+    <div class="slide-limit-row">
+      <span class="slide-limit-label">Jumlah slide:</span>
+      <input type="number" class="slide-limit-input" id="slideLimit" value="10" min="2" max="20" />
+      <span class="slide-limit-label">slide</span>
+    </div>
+  </nav>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Deskripsi Gambar</div>
+    <div class="modal-subtitle">Jelaskan posisi atau kegunaan gambar ini dalam presentasi</div>
+    <div class="modal-filename" id="modalFilename"></div>
+    <textarea class="modal-input" id="modalDesc" rows="3" placeholder="Contoh: logo perusahaan, taruh di slide cover"></textarea>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="cancelFile()">Batal</button>
+      <button class="btn-primary" onclick="confirmFile()">Tambahkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chatList        = document.getElementById('chatList');
+  const emptyState      = document.getElementById('emptyState');
+  const promptInput     = document.getElementById('promptInput');
+  const sendBtn         = document.getElementById('sendBtn');
+  const fileInput       = document.getElementById('fileInput');
+  const attachedPreview = document.getElementById('attachedPreview');
+  const slideLimitInput = document.getElementById('slideLimit');
+  const modalOverlay    = document.getElementById('modalOverlay');
+  const modalFilename   = document.getElementById('modalFilename');
+  const modalDesc       = document.getElementById('modalDesc');
+
+  let attachedFiles = [];
+  let pendingFile   = null;
+
+  // ── Textarea ──
+  promptInput.addEventListener('input', () => {
+    promptInput.style.height = 'auto';
+    promptInput.style.height = Math.min(promptInput.scrollHeight, 120) + 'px';
+  });
+
+  promptInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+
+  sendBtn.addEventListener('click', handleSend);
+
+  // ── File attach ──
+  fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files);
+    if (!files.length) return;
+    pendingFile = files[0];
+    modalFilename.textContent = pendingFile.name;
+    modalDesc.value = '';
+    modalOverlay.classList.add('active');
+    modalDesc.focus();
+    fileInput.value = '';
+  });
+
+  function cancelFile() { pendingFile = null; modalOverlay.classList.remove('active'); }
+
+  function confirmFile() {
+    if (!pendingFile) return;
+    const desc = modalDesc.value.trim() || `gambar: ${pendingFile.name}`;
+    attachedFiles.push({ url: URL.createObjectURL(pendingFile), description: desc, name: pendingFile.name });
+    renderAttachedChips();
+    pendingFile = null;
+    modalOverlay.classList.remove('active');
+  }
+
+  modalDesc.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmFile(); }
+    if (e.key === 'Escape') cancelFile();
+  });
+
+  function renderAttachedChips() {
+    attachedPreview.innerHTML = attachedFiles.map((f, i) => `
+      <div class="attached-chip">
+        <span class="material-icons">image</span>
+        <span class="text">${esc(f.name)}</span>
+        <button class="chip-remove" onclick="removeFile(${i})">
+          <span class="material-icons">close</span>
+        </button>
+      </div>`).join('');
+  }
+
+  function removeFile(i) { attachedFiles.splice(i, 1); renderAttachedChips(); }
+
+  // ── Send ──
+  async function handleSend() {
+    const prompt = promptInput.value.trim();
+    if (!prompt || sendBtn.disabled) return;
+
+    const files      = [...attachedFiles];
+    const slideLimit = Math.min(Math.max(2, Number(slideLimitInput.value) || 10), 20);
+
+    promptInput.value = '';
+    promptInput.style.height = 'auto';
+    attachedFiles = [];
+    renderAttachedChips();
+    emptyState.style.display = 'none';
+    sendBtn.disabled = true;
+
+    appendUserMessage(prompt, files);
+    const typingEl = appendTyping();
+
+    try {
+      const res = await fetch('/api/genslide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          files: files.map(f => ({ url: f.url, description: f.description })),
+          slideLimit,
+        }),
+      });
+
+      typingEl.remove();
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        appendError(err.error || 'Gagal generate slide.');
+        return;
+      }
+
+      const { html, slideCount, theme } = await res.json();
+      appendAIResponse(html, slideCount, theme, prompt);
+
+    } catch (err) {
+      typingEl.remove();
+      appendError('Koneksi gagal: ' + err.message);
+    } finally {
+      sendBtn.disabled = false;
+      promptInput.focus();
+    }
+  }
+
+  // ── appendAIResponse ──
+  // HTML is stored in-memory; PDF export runs directly in this page via iframe trick
+  function appendAIResponse(html, slideCount, theme, originalPrompt) {
+    const ts       = new Date().toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const filename = `slides-${Date.now()}`;
+    const cardId   = `card-${Date.now()}`;
+
+    const blob    = new Blob([html], { type: 'text/html' });
+    const htmlUrl = URL.createObjectURL(blob);
+
+    const el = document.createElement('div');
+    el.className = 'msg-ai';
+    el.innerHTML = `
+      <div class="msg-ai-label">
+        <div class="msg-ai-label-dot"></div>
+        YUAI-ND
+      </div>
+      <div class="msg-ai-card" id="${cardId}">
+        <div class="msg-ai-card-header">
+          <div class="slide-icon">
+            <span class="material-icons">slideshow</span>
+          </div>
+          <div class="doc-info">
+            <div class="doc-filename">${esc(filename)}.html</div>
+            <div class="doc-meta">${slideCount} slides &middot; 16:9 &middot; ${esc(theme?.style || 'custom')}</div>
+          </div>
+        </div>
+        <div class="msg-ai-card-footer">
+          <span class="doc-timestamp">${ts}</span>
+          <div class="btn-row">
+            <a class="btn-dl btn-html" href="${htmlUrl}" download="${filename}.html">
+              <span class="material-icons">code</span>
+              HTML
+            </a>
+            <button class="btn-dl btn-pdf" id="pdf-${cardId}">
+              <span class="material-icons">picture_as_pdf</span>
+              Export PDF
+            </button>
+          </div>
+        </div>
+        <div class="pdf-progress" id="prog-${cardId}">
+          <div class="pdf-progress-bar-wrap">
+            <div class="pdf-progress-bar" id="bar-${cardId}"></div>
+          </div>
+          <span class="pdf-progress-label" id="lbl-${cardId}">Preparing...</span>
+        </div>
+      </div>`;
+
+    chatList.appendChild(el);
+    scrollBottom();
+
+    // ── PDF export handler ──
+    document.getElementById(`pdf-${cardId}`).addEventListener('click', async function() {
+      this.disabled = true;
+      this.innerHTML = `<span class="material-icons" style="font-size:15px;animation:spin 1s linear infinite">refresh</span> Exporting...`;
+
+      const progEl = document.getElementById(`prog-${cardId}`);
+      const barEl  = document.getElementById(`bar-${cardId}`);
+      const lblEl  = document.getElementById(`lbl-${cardId}`);
+
+      progEl.classList.add('active');
+
+      try {
+        await exportSlidesToPDF(html, slideCount, filename, barEl, lblEl);
+      } catch (e) {
+        console.error('PDF export failed:', e);
+        lblEl.textContent = 'Export gagal: ' + e.message;
+        setTimeout(() => progEl.classList.remove('active'), 3000);
+      } finally {
+        progEl.classList.remove('active');
+        this.disabled = false;
+        this.innerHTML = `<span class="material-icons" style="font-size:15px">picture_as_pdf</span> Export PDF`;
+      }
+    });
+  }
+
+  // ── PDF Export ──
+  // Renders each slide in a hidden iframe, captures via html2canvas, stitches into jsPDF
+  async function exportSlidesToPDF(html, slideCount, filename, barEl, lblEl) {
+    const { jsPDF } = window.jspdf;
+    const W = 1280, H = 720;
+
+    // Load HTML into hidden iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${W}px;height:${H * slideCount}px;border:none;pointer-events:none;`;
+    document.body.appendChild(iframe);
+
+    await new Promise(resolve => {
+      iframe.onload = resolve;
+      iframe.srcdoc = html;
+    });
+
+    // Wait for fonts/images inside iframe
+    await new Promise(r => setTimeout(r, 1200));
+
+    const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+    const wrappers = iDoc.querySelectorAll('.slide-wrapper');
+
+    // Temporarily disable scale transform for capture
+    wrappers.forEach(w => { w.dataset.prevT = w.style.transform; w.style.transform = 'none'; });
+
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [W, H] });
+
+    for (let i = 0; i < wrappers.length; i++) {
+      lblEl.textContent = `Slide ${i + 1} / ${wrappers.length}`;
+      barEl.style.width = ((i / wrappers.length) * 100) + '%';
+
+      const slideEl = wrappers[i].querySelector('.slide');
+      if (!slideEl) continue;
+
+      const canvas = await html2canvas(slideEl, {
+        width: W, height: H, scale: 1.5,
+        useCORS: true, allowTaint: true,
+        logging: false, backgroundColor: null,
+        windowWidth: W, windowHeight: H,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      if (i > 0) pdf.addPage([W, H], 'landscape');
+      pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+    }
+
+    barEl.style.width = '100%';
+    lblEl.textContent = 'Done!';
+
+    // Restore transforms
+    wrappers.forEach(w => { w.style.transform = w.dataset.prevT || ''; });
+    document.body.removeChild(iframe);
+
+    pdf.save(`${filename}.pdf`);
+  }
+
+  // ── Helpers ──
+  function appendUserMessage(prompt, files) {
+    const el = document.createElement('div');
+    el.className = 'msg-user';
+    const chips = files.length
+      ? `<div class="msg-user-meta">${files.map(f => `<div class="attach-chip"><span class="material-icons">image</span>${esc(f.name)}</div>`).join('')}</div>`
+      : '';
+    el.innerHTML = `<div><div class="msg-user-bubble">${esc(prompt)}</div>${chips}</div>`;
+    chatList.appendChild(el);
+    scrollBottom();
+  }
+
+  function appendTyping() {
+    const el = document.createElement('div');
+    el.className = 'msg-typing';
+    el.innerHTML = `
+      <div class="typing-dots">
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+      </div>
+      <span class="typing-label">Generating slides...</span>`;
+    chatList.appendChild(el);
+    scrollBottom();
+    return el;
+  }
+
+  function appendError(msg) {
+    const el = document.createElement('div');
+    el.className = 'msg-ai';
+    el.innerHTML = `
+      <div class="msg-ai-label">
+        <div class="msg-ai-label-dot" style="background:#ff3366;box-shadow:0 0 7px rgba(255,51,102,0.5)"></div>
+        Error
+      </div>
+      <div class="msg-ai-card" style="border-color:rgba(255,51,102,0.2)">
+        <div class="msg-ai-card-header">
+          <div class="slide-icon" style="background:rgba(255,51,102,0.1);border-color:rgba(255,51,102,0.3);box-shadow:none">
+            <span class="material-icons" style="color:#ff3366">error_outline</span>
+          </div>
+          <div class="doc-info">
+            <div class="doc-filename" style="color:#ff6688">${esc(msg)}</div>
+            <div class="doc-meta">Coba ulangi dengan prompt yang berbeda</div>
+          </div>
+        </div>
+      </div>`;
+    chatList.appendChild(el);
+    scrollBottom();
+  }
+
+  function scrollBottom() { setTimeout(() => chatList.scrollTo({ top: chatList.scrollHeight, behavior: 'smooth' }), 50); }
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // spin keyframe for loading icon
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+</script>
+</body>
+</html>
+

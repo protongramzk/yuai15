@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YUAI-ND · Docs Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base: #080c14;
+      --bg-surface: #0d1220;
+      --bg-elevated: #121829;
+      --bg-overlay: #18203a;
+      --accent: #5c4af0;
+      --accent-soft: #7060f5;
+      --accent-glow: rgba(92, 74, 240, 0.38);
+      --accent-dim: rgba(92, 74, 240, 0.13);
+      --purple-aura: rgba(120, 60, 200, 0.1);
+      --text-primary: #eae8f5;
+      --text-secondary: #8e8fb0;
+      --text-dim: #4a4a6e;
+      --border: rgba(255,255,255,0.06);
+      --border-accent: rgba(92, 74, 240, 0.32);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      overflow: hidden;
+    }
+
+    /* ── Mesh Background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 15% 10%, rgba(92, 74, 240, 0.16) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 85% 80%, rgba(120, 50, 220, 0.13) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(70, 50, 180, 0.09) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 70% 20%, rgba(100, 40, 200, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .app {
+      position: relative;
+      z-index: 1;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13, 18, 32, 0.7);
+      backdrop-filter: blur(20px);
+      flex-shrink: 0;
+    }
+
+    .header-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent) 0%, #9b59f5 100%);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .header-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.5px;
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+
+    .header-badge {
+      margin-left: auto;
+      padding: 4px 10px;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      border-radius: 20px;
+      font-size: 11px;
+      color: #6b9fff;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Chat List ── */
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-list::-webkit-scrollbar { width: 4px; }
+    .chat-list::-webkit-scrollbar-track { background: transparent; }
+    .chat-list::-webkit-scrollbar-thumb { background: var(--bg-overlay); border-radius: 4px; }
+
+    /* ── Empty State ── */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 40px;
+      text-align: center;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .empty-icon {
+      width: 72px;
+      height: 72px;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-icon .material-icons { font-size: 32px; color: var(--accent-soft); }
+    .empty-title { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+    .empty-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; max-width: 300px; }
+
+    /* ── Message: User ── */
+    .msg-user {
+      display: flex;
+      justify-content: flex-end;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .msg-user-bubble {
+      max-width: 70%;
+      background: var(--accent);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+      font-size: 14px;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+
+    .msg-user-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      justify-content: flex-end;
+    }
+
+    .msg-user-meta .attach-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .msg-user-meta .attach-chip .material-icons { font-size: 12px; }
+
+    /* ── Message: AI ── */
+    .msg-ai {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .msg-ai-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 0.3px;
+    }
+
+    .msg-ai-label-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+
+    .msg-ai-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .msg-ai-card:hover { border-color: var(--border-accent); }
+
+    .msg-ai-card-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .doc-icon {
+      width: 38px; height: 38px;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .doc-icon .material-icons { font-size: 20px; color: var(--accent-soft); }
+
+    .doc-info { flex: 1; min-width: 0; }
+
+    .doc-filename {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .doc-pages {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .msg-ai-card-footer {
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .doc-timestamp {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .btn-download {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-download:hover {
+      background: var(--accent-soft);
+      box-shadow: 0 4px 16px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-download:active { transform: translateY(0); }
+    .btn-download .material-icons { font-size: 16px; }
+
+    /* ── Typing Indicator ── */
+    .msg-typing {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 5px;
+      padding: 14px 18px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+
+    .typing-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      animation: typingBounce 1.2s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    .typing-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      padding: 12px 16px;
+      background: rgba(13, 18, 32, 0.85);
+      backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Attached files preview */
+    .attached-preview {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+
+    .attached-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: var(--bg-overlay);
+      border: 1px solid var(--border-accent);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      max-width: 180px;
+    }
+
+    .attached-chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    .attached-chip .material-icons { font-size: 14px; color: var(--accent-soft); flex-shrink: 0; }
+
+    .chip-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    .chip-remove:hover { color: #ff6b6b; }
+    .chip-remove .material-icons { font-size: 14px; }
+
+    /* Input row */
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding-bottom: 6px;
+    }
+
+    .icon-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      position: relative;
+    }
+
+    .icon-btn:hover { background: var(--bg-overlay); color: var(--text-primary); }
+    .icon-btn .material-icons { font-size: 22px; }
+
+    #fileInput { display: none; }
+
+    .input-wrap {
+      flex: 1;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: flex-end;
+      padding: 10px 14px;
+      gap: 8px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--border-accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    #promptInput {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      max-height: 120px;
+      min-height: 22px;
+      scrollbar-width: none;
+    }
+
+    #promptInput::placeholder { color: var(--text-dim); }
+    #promptInput::-webkit-scrollbar { display: none; }
+
+    .send-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+
+    .send-btn:hover { background: var(--accent-soft); box-shadow: 0 4px 14px var(--accent-glow); transform: scale(1.06); }
+    .send-btn:active { transform: scale(0.96); }
+    .send-btn:disabled { background: var(--bg-overlay); color: var(--text-dim); cursor: not-allowed; transform: none; box-shadow: none; }
+    .send-btn .material-icons { font-size: 18px; }
+
+    .page-limit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 0 4px;
+    }
+
+    .page-limit-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .page-limit-input {
+      width: 52px;
+      background: var(--bg-overlay);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      padding: 4px 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .page-limit-input:focus { border-color: var(--border-accent); }
+
+    /* ── Modal for file description ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      width: 90%;
+      max-width: 400px;
+      animation: scaleIn 0.25s ease;
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .modal-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .modal-filename {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--accent-soft);
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      background: var(--accent-dim);
+      border-radius: var(--radius-sm);
+      word-break: break-all;
+    }
+
+    .modal-input {
+      width: 100%;
+      background: var(--bg-overlay);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 12px 14px;
+      outline: none;
+      resize: none;
+      transition: border-color 0.2s;
+    }
+
+    .modal-input:focus { border-color: var(--border-accent); }
+    .modal-input::placeholder { color: var(--text-dim); }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+
+    .btn-ghost {
+      padding: 9px 18px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .btn-ghost:hover { border-color: var(--border-accent); }
+
+    .btn-primary {
+      padding: 9px 18px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover { background: var(--accent-soft); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-logo">YU</div>
+    <div class="header-title">
+      <div class="header-name">YUAI-ND</div>
+      <div class="header-sub">Docs Generator</div>
+    </div>
+    <div class="header-badge">Mistral AI</div>
+  </header>
+
+  <!-- Chat List -->
+  <div class="chat-list" id="chatList">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">
+        <span class="material-icons">auto_awesome</span>
+      </div>
+      <div class="empty-title">Buat dokumen dengan AI</div>
+      <div class="empty-desc">Deskripsikan dokumen yang ingin kamu buat. AI akan menyusunnya menjadi file HTML siap unduh.</div>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+
+    <!-- Attached files preview -->
+    <div class="attached-preview" id="attachedPreview"></div>
+
+    <!-- Input row -->
+    <div class="input-row">
+      <div class="input-actions">
+        <button class="icon-btn" title="Tambah gambar/file" onclick="document.getElementById('fileInput').click()">
+          <span class="material-icons">attach_file</span>
+        </button>
+        <input type="file" id="fileInput" multiple accept="image/*,.pdf,.png,.jpg,.jpeg,.webp" />
+      </div>
+
+      <div class="input-wrap">
+        <textarea id="promptInput" rows="1" placeholder="Deskripsikan dokumen yang ingin dibuat..."></textarea>
+        <button class="send-btn" id="sendBtn" title="Generate dokumen">
+          <span class="material-icons">arrow_upward</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Page limit -->
+    <div class="page-limit-row">
+      <span class="page-limit-label">Maks halaman:</span>
+      <input type="number" class="page-limit-input" id="pageLimit" value="8" min="1" max="20" />
+      <span class="page-limit-label">halaman</span>
+    </div>
+
+  </nav>
+</div>
+
+<!-- Modal: file description -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Deskripsi File</div>
+    <div class="modal-subtitle">Jelaskan posisi atau kegunaan file ini dalam dokumen</div>
+    <div class="modal-filename" id="modalFilename"></div>
+    <textarea class="modal-input" id="modalDesc" rows="3" placeholder="Contoh: logo perusahaan, taruh di halaman awal"></textarea>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="cancelFile()">Batal</button>
+      <button class="btn-primary" onclick="confirmFile()">Tambahkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chatList = document.getElementById('chatList');
+  const emptyState = document.getElementById('emptyState');
+  const promptInput = document.getElementById('promptInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const fileInput = document.getElementById('fileInput');
+  const attachedPreview = document.getElementById('attachedPreview');
+  const pageLimitInput = document.getElementById('pageLimit');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalFilename = document.getElementById('modalFilename');
+  const modalDesc = document.getElementById('modalDesc');
+
+  let attachedFiles = []; // { url, description, name }
+  let pendingFile = null;
+
+  // ── Auto-resize textarea ──
+  promptInput.addEventListener('input', () => {
+    promptInput.style.height = 'auto';
+    promptInput.style.height = Math.min(promptInput.scrollHeight, 120) + 'px';
+  });
+
+  // ── Send on Enter (Shift+Enter = newline) ──
+  promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  });
+
+  sendBtn.addEventListener('click', handleSend);
+
+  // ── File input ──
+  fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files);
+    if (!files.length) return;
+    pendingFile = files[0];
+    modalFilename.textContent = pendingFile.name;
+    modalDesc.value = '';
+    modalOverlay.classList.add('active');
+    modalDesc.focus();
+    fileInput.value = '';
+  });
+
+  function cancelFile() {
+    pendingFile = null;
+    modalOverlay.classList.remove('active');
+  }
+
+  function confirmFile() {
+    if (!pendingFile) return;
+    const desc = modalDesc.value.trim() || `file: ${pendingFile.name}`;
+    const url = URL.createObjectURL(pendingFile);
+    attachedFiles.push({ url, description: desc, name: pendingFile.name });
+    renderAttachedChips();
+    pendingFile = null;
+    modalOverlay.classList.remove('active');
+  }
+
+  modalDesc.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmFile(); }
+    if (e.key === 'Escape') cancelFile();
+  });
+
+  function renderAttachedChips() {
+    attachedPreview.innerHTML = attachedFiles.map((f, i) => `
+      <div class="attached-chip">
+        <span class="material-icons">image</span>
+        <span>${f.name}</span>
+        <button class="chip-remove" onclick="removeFile(${i})" title="Hapus">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+    `).join('');
+  }
+
+  function removeFile(i) {
+    attachedFiles.splice(i, 1);
+    renderAttachedChips();
+  }
+
+  // ── Send ──
+  async function handleSend() {
+    const prompt = promptInput.value.trim();
+    if (!prompt || sendBtn.disabled) return;
+
+    const files = [...attachedFiles];
+    const pageLimit = Math.min(Math.max(1, Number(pageLimitInput.value) || 8), 20);
+
+    // Clear input
+    promptInput.value = '';
+    promptInput.style.height = 'auto';
+    attachedFiles = [];
+    renderAttachedChips();
+    emptyState.style.display = 'none';
+    sendBtn.disabled = true;
+
+    // User message
+    appendUserMessage(prompt, files);
+
+    // Typing indicator
+    const typingEl = appendTyping();
+
+    try {
+      const res = await fetch('/api/gendocs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, files: files.map(f => ({ url: f.url, description: f.description })), pageLimit }),
+      });
+
+      typingEl.remove();
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        appendError(err.error || 'Gagal generate dokumen.');
+        return;
+      }
+
+      const html = await res.text();
+      const blob = new Blob([html], { type: 'text/html' });
+      const downloadUrl = URL.createObjectURL(blob);
+      appendAIResponse(downloadUrl, pageLimit);
+
+    } catch (err) {
+      typingEl.remove();
+      appendError('Koneksi gagal: ' + err.message);
+    } finally {
+      sendBtn.disabled = false;
+      promptInput.focus();
+    }
+  }
+
+  function appendUserMessage(prompt, files) {
+    const el = document.createElement('div');
+    el.className = 'msg-user';
+    const chips = files.length
+      ? `<div class="msg-user-meta">${files.map(f => `
+          <div class="attach-chip">
+            <span class="material-icons">image</span>
+            ${f.name}
+          </div>`).join('')}
+        </div>` : '';
+    el.innerHTML = `
+      <div>
+        <div class="msg-user-bubble">${escHtml(prompt)}</div>
+        ${chips}
+      </div>`;
+    chatList.appendChild(el);
+    scrollBottom();
+  }
+
+  function appendTyping() {
+    const el = document.createElement('div');
+    el.className = 'msg-typing';
+    el.innerHTML = `
+      <div class="typing-dots">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+      <span class="typing-label">Generating...</span>`;
+    chatList.appendChild(el);
+    scrollBottom();
+    return el;
+  }
+
+  function appendAIResponse(downloadUrl, pageLimit) {
+    const timestamp = new Date().toLocaleString('id-ID', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    const filename = `doc-${Date.now()}.html`;
+
+    const el = document.createElement('div');
+    el.className = 'msg-ai';
+    el.innerHTML = `
+      <div class="msg-ai-label">
+        <div class="msg-ai-label-dot"></div>
+        YUAI-ND
+      </div>
+      <div class="msg-ai-card">
+        <div class="msg-ai-card-header">
+          <div class="doc-icon">
+            <span class="material-icons">description</span>
+          </div>
+          <div class="doc-info">
+            <div class="doc-filename">${filename}</div>
+            <div class="doc-pages">${pageLimit} halaman · HTML Document</div>
+          </div>
+        </div>
+        <div class="msg-ai-card-footer">
+          <span class="doc-timestamp">${timestamp}</span>
+          <a class="btn-download" href="${downloadUrl}" download="${filename}">
+            <span class="material-icons">download</span>
+            Download
+          </a>
+        </div>
+      </div>`;
+    chatList.appendChild(el);
+    scrollBottom();
+  }
+
+  function appendError(msg) {
+    const el = document.createElement('div');
+    el.className = 'msg-ai';
+    el.innerHTML = `
+      <div class="msg-ai-label">
+        <div class="msg-ai-label-dot" style="background:#ff6b6b;box-shadow:0 0 6px rgba(255,107,107,0.4)"></div>
+        Error
+      </div>
+      <div class="msg-ai-card" style="border-color:rgba(255,107,107,0.2);">
+        <div class="msg-ai-card-header">
+          <div class="doc-icon" style="background:rgba(255,107,107,0.1);border-color:rgba(255,107,107,0.3)">
+            <span class="material-icons" style="color:#ff6b6b">error_outline</span>
+          </div>
+          <div class="doc-info">
+            <div class="doc-filename" style="color:#ff8a8a">${escHtml(msg)}</div>
+            <div class="doc-pages">Coba lagi dengan prompt yang berbeda</div>
+          </div>
+        </div>
+      </div>`;
+    chatList.appendChild(el);
+    scrollBottom();
+  }
+
+  function scrollBottom() {
+    setTimeout(() => chatList.scrollTo({ top: chatList.scrollHeight, behavior: 'smooth' }), 50);
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+---
+const title = "ChAInSDK";
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>ChAInSDK – AI Pipeline Builder</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs/prism.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+  --bg:#0b0b0f;
+  --surface:#111117;
+  --surface-2:#151520;
+  --accent:#7c6cff;
+  --text:#eaeaf2;
+  --muted:#9ca0b3;
+  --border:#24243a;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:"Geist",system-ui;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:48px 20px;
+}
+
+nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:60px;
+}
+
+.logo{
+  font-weight:700;
+  font-size:20px;
+  letter-spacing:0.5px;
+}
+
+.logo span{
+  color:var(--accent);
+}
+
+.hero h1{
+  font-size:48px;
+  margin:0 0 16px;
+}
+
+.hero p{
+  font-size:18px;
+  color:var(--muted);
+  max-width:650px;
+}
+
+.badge{
+  background:rgba(124,108,255,0.15);
+  color:var(--accent);
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:13px;
+  margin-bottom:18px;
+  display:inline-block;
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:28px;
+  margin-top:32px;
+}
+
+h2{
+  margin-top:0;
+}
+
+pre{
+  border-radius:12px;
+  font-size:14px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:20px;
+}
+
+.feature{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  padding:22px;
+  border-radius:14px;
+}
+
+.feature h3{
+  margin:0 0 10px;
+}
+
+.footer{
+  margin-top:80px;
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<nav>
+<div class="logo">ChAIn<span>SDK</span></div>
+<div style="color:var(--muted)">AI Pipeline Builder</div>
+</nav>
+
+<section class="hero">
+<div class="badge">Vercel AI SDK Workflow Engine</div>
+<h1>Build AI pipelines<br/>like code, not chaos.</h1>
+<p>
+ChAInSDK is a lightweight orchestration layer built on top of the
+Vercel AI SDK. Design structured AI workflows, run multi-step prompts,
+and build complex reasoning pipelines with a fluent API.
+</p>
+</section>
+
+
+<div class="card">
+<h2>Install</h2>
+
+<pre><code class="language-bash">
+npm install chainsdk
+</code></pre>
+
+</div>
+
+
+<div class="card">
+<h2>Quick Example</h2>
+
+<pre><code class="language-js">
+import { google } from "@ai-sdk/google"
+import ChAInSDK from "chainsdk"
+
+const chain = new ChAInSDK({
+  model: google("gemini-2.5-flash")
+})
+
+const result = await chain
+  .start("blog-generator")
+
+  .ai.text("topic", () =>
+    "Generate a trending tech article topic"
+  )
+
+  .ai.text("outline", (ctx) =>
+    `Create an outline for: ${ctx.topic}`
+  )
+
+  .ai.text("article", (ctx) =>
+    `Write a full article from this outline: ${ctx.outline}`
+  )
+
+  .end()
+
+console.log(result)
+</code></pre>
+
+</div>
+
+
+<div class="card">
+<h2>Core Concepts</h2>
+
+<div class="grid">
+
+<div class="feature">
+<h3>AI Steps</h3>
+<p>
+Run LLM tasks directly inside your workflow using
+<code>ai.text()</code> or <code>ai.object()</code>.
+</p>
+</div>
+
+<div class="feature">
+<h3>Context Engine</h3>
+<p>
+Every step writes to a shared context object. Future steps can reference
+previous outputs automatically.
+</p>
+</div>
+
+<div class="feature">
+<h3>Iteration</h3>
+<p>
+Process arrays with <code>each()</code> and automatically collect
+outputs across iterations.
+</p>
+</div>
+
+<div class="feature">
+<h3>Execution Hooks</h3>
+<p>
+Attach custom logic with <code>execute()</code> to integrate
+side-effects, logging, or tools.
+</p>
+</div>
+
+</div>
+</div>
+
+
+<div class="card">
+<h2>Structured Object Generation</h2>
+
+<pre><code class="language-js">
+pipeline.ai.object(
+  "layout",
+  (ctx) => `
+Generate a website layout for:
+${ctx.topic}
+`,
+  {
+    schema: LayoutSchema
+  }
+)
+</code></pre>
+
+<p style="color:var(--muted)">
+Schemas ensure AI outputs remain predictable and validated.
+</p>
+
+</div>
+
+
+<div class="card">
+<h2>Looping Through Data</h2>
+
+<pre><code class="language-js">
+pipeline
+  .each("layout.files")
+
+  .ai.text("fileContent", (ctx) => `
+Write the code for file:
+${ctx.item.name}
+`)
+
+  .endEach()
+</code></pre>
+
+</div>
+
+
+<div class="card">
+<h2>Lifecycle Hooks</h2>
+
+<pre><code class="language-js">
+pipeline
+  .onStepStart((step, ctx) => {
+    console.log("Starting:", step)
+  })
+
+  .onStepEnd((step, output) => {
+    console.log("Finished:", step)
+  })
+</code></pre>
+
+</div>
+
+
+<div class="footer">
+ChAInSDK • Lightweight AI Workflow Engine
+</div>
+
+</div>
+
+</body>
+</html>
